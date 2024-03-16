@@ -5,15 +5,6 @@ const crypto = require('crypto');
 
 const { validationResult } = require('express-validator')
 
-const nodemailer = require('nodemailer');
-const sendgridTransport = require('nodemailer-sendgrid-transport');
-
-
-const transporter = nodemailer.createTransport(sendgridTransport({
-    auth: {
-        api_key: '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'
-    }
-}));
 
 
 exports.getLogin = (req, res, next) => {
@@ -68,12 +59,6 @@ exports.postSignup = (req, res, next) => {
         newUser.save()
             .then(result => {
                 res.redirect('/login');
-                return transporter.sendMail({
-                    to: email,
-                    from: 'jain1207harshit@gmail.com',
-                    subject: 'successful Signup',
-                    html: '<h1>Welcome aboard</h1>'
-                })
             })
             .catch(err => console.log(err));
     })
@@ -96,7 +81,10 @@ exports.postLogin = (req, res, next) => {
                     }
                     req.session.isLoggedIn = true;
                     req.session.user = user;
-                    req.session.save(() => res.redirect('/'))
+                    req.session.save(() => {
+                        console.log(req.session);
+                        res.redirect('/');
+                    })
                 })
                 .catch(err => {
                     console.log(err);
@@ -114,73 +102,4 @@ exports.postLogout = (req, res, next) => {
     });
 };
 
-exports.getReset = (req, res, next) => {
-    res.render('auth/reset', {
-        path: '/reset',
-        pageTitle: 'Reset password',
-        isAuthenticated: false,
-        errorMessage: req.flash('error')
-    });
-}
-exports.postReset = (req, res, next) => {
-    crypto.randomBytes(32, (err, buffer) => {
-        if (err) {
-            console.log(err);
-            return res.redirect('/reset');
-        }
-        const token = buffer.toString('hex');
-        User.findOne({ email: req.body.email })
-            .then(user => {
-                if (!user) { req.flash('error', 'no account found'); return req.session.save(() => res.redirect('/reset')); }
-                user.resetToken = token;
-                user.resetTokenExpiration = Date.now() + 3600000;
-                return user.save()
-                    .then(() => {
-                        res.redirect('/');
-                        transporter.sendMail({
-                            to: req.body.email,
-                            from: 'jain1207harshit@gmail.com',
-                            subject: 'Reset Password',
-                            html:
-                                `
-                                <p>you requested a password reset</p>
-                                <p>click this <a href = "http://localhost:3000/reset/${token}">link</a> to reset password</p>
-                                
-                                `
-                        })
-                    })
-                    .catch(err => console.log(err));
-            })
-            .catch(err => console.log(err));
-    })
-}
 
-exports.changePassword = (req, res, next) => {
-    const token = req.params.token;
-    return User.findOne({ resetToken: token, resetTokenExpiration: { $gt: Date.now() } })
-        .then(user => {
-            if (!user) { return res.redirect('/'); }
-            console.log(user)
-            return res.render('auth/resetPassword', {
-                path: '/resetPassword',
-                pageTitle: 'Reset password',
-                isAuthenticated: false,
-                token: token,
-                errorMessage: req.flash('error')
-            });
-        })
-        .catch(err => console.log(err));
-}
-exports.postChangePassword = (req, res, next) => {
-    const token = req.body.token;
-    const password = req.body.password;
-    User.findOne({ resetToken: token })
-        .then(user => {
-            console.log(user);
-            bcrypt.hash(password, 12).then(hashedpassword => {
-                console.log(user);
-                user.password = hashedpassword;
-                return user.save().then(() => res.redirect('/login'));
-            })
-        })
-};

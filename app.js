@@ -11,14 +11,8 @@ const multer = require('multer');
 const crypto = require('crypto'); 
 const errorController = require('./controllers/error');
 const User = require('./models/user');
-// const helmet = require('helmet');
-// const compression = require('compression');
-// const morgan = require('morgan');
-// const https = require('https');
-
-const MONGODB_URI = `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASSWORD}@cluster0.9ronrfd.mongodb.net/${process.env.MONGO_DATABASE}?retryWrites=true&w=majority`;
+const MONGODB_URI = "mongodb+srv://21ucs246:3FAtwybRo0lmu8t7@cluster0.6weqydi.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0/shop";
 console.log(MONGODB_URI);
-// const accessLogstream = fs.createWriteStream(path.join(__dirname , 'access.log') , {flags: 'a'});
 
 const app = express();
 const store = new MongoDBStore({
@@ -26,6 +20,10 @@ const store = new MongoDBStore({
     collection: 'sessions'
 });
 const csrfProtection = csrf();
+
+const hash = require('random-hash'); // you have to install this package:
+
+const { v4: uuidv4 } = require('uuid');
 
 const fileStorage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -35,6 +33,8 @@ const fileStorage = multer.diskStorage({
         cb(null, crypto.randomBytes(1).toString('hex') + '-' + file.originalname);
     }
 });
+
+
 
 const fileFilter = (req, file, cb) => {
     if (
@@ -48,9 +48,6 @@ const fileFilter = (req, file, cb) => {
     }
 };
 
-// const privateKey = fs.readFileSync('server.key');
-// const certificate = fs.readFileSync('server.cert');
-
 app.set('view engine', 'ejs');
 app.set('views', 'views');
 
@@ -58,11 +55,6 @@ const adminRoutes = require('./routes/admin');
 const shopRoutes = require('./routes/shop');
 const authRoutes = require('./routes/auth');
 
-
-
-// app.use(helmet());
-// app.use(compression());
-// app.use(morgan('combined', {stream: accessLogstream}));
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(
@@ -82,6 +74,7 @@ app.use(csrfProtection);
 app.use(flash());
 
 app.use((req, res, next) => {
+    console.log(req.url);
     res.locals.isAuthenticated = req.session.isLoggedIn;
     res.locals.csrfToken = req.csrfToken();
     next();
@@ -113,10 +106,13 @@ app.use(authRoutes);
 app.use(errorController.get404);
 
 app.use((error, req, res, next) => {
+    console.log('error 505');
+    console.log(req.session);
+    console.log(error);
     res.status(500).render('500', {
         pageTitle: 'Error!',
         path: '/500',
-        isAuthenticated: req.session.isLoggedIn
+        isAuthenticated: false
     });
 });
 
@@ -124,10 +120,6 @@ mongoose
     .connect(MONGODB_URI)
     .then(result => {
         console.log('connection sucessfull');
-        // https.createServer({
-        //     key: privateKey,
-        //     cert: certificate
-        // }, app).listen(process.env.PORT || 3000);
         app.listen(process.env.PORT || 3000);
     })
     .catch(err => {

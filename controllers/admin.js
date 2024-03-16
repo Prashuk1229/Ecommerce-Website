@@ -1,8 +1,6 @@
 const Product = require('../models/product');
 const { validationResult } = require('express-validator')
-const fs = require('fs');
 const fileHelper = require('../util/file');
-const product = require('../models/product');
 
 exports.getAddProduct = (req, res, next) => {
     res.render('admin/edit-product', {
@@ -14,13 +12,13 @@ exports.getAddProduct = (req, res, next) => {
             description:'',
             price:0
         },
-
         errorMessage:false,
         validationErrors:[]
     });
 };
 
 exports.postAddProduct = (req, res, next) => {
+    console.log('function called');
     const title = req.body.title;
     const image = req.file;
     const price = req.body.price;
@@ -76,6 +74,7 @@ exports.postAddProduct = (req, res, next) => {
             res.redirect('/admin/products');
         })
         .catch(err => {
+            console.log(error);
             const error = new Error(err);
             error.httpStatusCode = 500;
             return next(error);

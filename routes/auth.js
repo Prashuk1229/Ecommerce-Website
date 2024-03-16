@@ -32,10 +32,5 @@ router.post('/signup', [
 
 router.post('/logout', authController.postLogout);
 
-router.get('/reset', authController.getReset);
-router.post('/reset', authController.postReset);
-
-router.get('/reset/:token', authController.changePassword);
-router.post('/resetpassword', authController.postChangePassword);
 
 module.exports = router;
