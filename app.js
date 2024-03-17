@@ -21,10 +21,6 @@ const store = new MongoDBStore({
 });
 const csrfProtection = csrf();
 
-const hash = require('random-hash'); // you have to install this package:
-
-const { v4: uuidv4 } = require('uuid');
-
 const fileStorage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, 'images');
